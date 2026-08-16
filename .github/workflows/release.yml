@@ -29,6 +29,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Idempotent: a re-run must not fail on "tag_name already exists",
+          # or the tap job that depends on this one never gets to run.
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists; leaving it alone."
+            exit 0
+          fi
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
