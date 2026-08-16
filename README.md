@@ -113,6 +113,7 @@ start, so your other sessions are unaffected.
 | `dict up [id…]` | revive sessions a reboot killed, conversation intact |
 | `dict cd [id]` | move the calling shell into a session's directory |
 | `dict note <id> <text>` | annotate |
+| `dict rename [id] [title…]` | retitle a session; the id, branch and worktree stay as they are |
 | `dict kill [id…]` | stop a session, keep it in the list |
 | `dict rm [id…]` | end sessions for good |
 | `dict prune [days]` | forget everything stale (default: 7 days) |
@@ -128,6 +129,7 @@ not affect your other tmux sessions.
 |---|---|
 | `prefix N` | new session |
 | `prefix S` | switch — fzf, with a live preview of each pane |
+| `prefix R` | rename a session (title only) |
 | `prefix K` | stop a session (reversible) |
 | `prefix X` | forget a session (permanent) |
 | `prefix Enter` | a shell in the session's directory, as a popup |

@@ -1,0 +1,22 @@
+# dict rename — give a session a better title once you know what the work
+# really was. Only the title changes: the id stays, and with it the tmux
+# session name, the branch and the worktree path. Those are addresses other
+# things already hold; the title is the label you read.
+emulate -L zsh
+_dict_require jq || return 1
+
+local id=${1:-}
+[[ -n $id ]] || { id=$(_dict_pick) || return 1 }
+(( $# )) && shift
+
+local entry
+entry=$(_dict_get $id) || { print -ru2 -- "dict: unknown session: $id"; return 1 }
+
+local title=$*
+# Prefilled with the current title, so a rename is an edit rather than retyping.
+[[ -n $title ]] || title=$(_dict_ask 'rename' 'new title  enter to accept      esc  cancel' \
+                             "$(print -r -- $entry | jq -r '.title')")
+[[ -n $title ]] || { print -ru2 -- 'dict: a title is required'; return 1 }
+
+_dict_set $id title "$title" || return 1
+print -r -- "dict: $id is now “$title”"

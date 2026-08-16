@@ -180,8 +180,8 @@ _dict_tmux kill-session -t '=dict-prev-1' 2>/dev/null
 
 t 'help'
 HELP=$(dict-help)
-eq 'help mentions every command' 9 \
-   "$(for c in new ls sw up cd note rm prune reload; do print -r -- $HELP | grep -c "dict $c" ; done | grep -vc '^0$')"
+eq 'help mentions every command' 10 \
+   "$(for c in new ls sw up cd note rename rm prune reload; do print -r -- $HELP | grep -c "dict $c" ; done | grep -vc '^0$')"
 eq 'help mentions the prefix keys' 1 "$(print -r -- $HELP | grep -c 'prefix N')"
 eq 'help mentions every state' 6 \
    "$(print -r -- $HELP | grep -cE '(running|waiting|done|ended|dead|orphan) ')"
@@ -228,6 +228,20 @@ dict-note s-dead 'now something else'
 eq 'note replaced' 'now something else' "$(_dict_get s-dead | jq -r .note)"
 fails 'note on unknown id fails' dict-note s-nope 'x'
 fails 'note with no id fails'    dict-note
+
+t 'rename'
+dict-rename s-dead 'a better name' >/dev/null
+eq 'title replaced' 'a better name' "$(_dict_get s-dead | jq -r .title)"
+# Everything the id addresses must survive a retitle.
+eq 'id unchanged'    's-dead'      "$(_dict_get s-dead | jq -r .id)"
+eq 'tmux unchanged'  'dict-s-dead' "$(_dict_get s-dead | jq -r .tmux)"
+eq 'note unchanged'  'now something else' "$(_dict_get s-dead | jq -r .note)"
+# Multiple words arrive as one title, not just the first.
+dict-rename s-dead one two three >/dev/null
+eq 'the whole argument list is the title' 'one two three' "$(_dict_get s-dead | jq -r .title)"
+eq 'sibling untouched' 't' "$(_dict_get s-orphan | jq -r .title)"
+fails 'rename on unknown id fails' dict-rename s-nope 'x'
+dict-rename s-dead 'a better name' >/dev/null
 
 t 'worktree safety'
 # A clean worktree whose commits are all on main is safe to delete.
@@ -354,7 +368,7 @@ CONFSOCK=dict-conf-$$
 command tmux -L $CONFSOCK -f $GEN new-session -d -s conftest 2>/dev/null
 KEYS=$(command tmux -L $CONFSOCK list-keys 2>/dev/null)
 
-for k in N S K X '?' r Enter c; do
+for k in N S R K X '?' r Enter c; do
   print -r -- $KEYS | grep -qE "T prefix +\Q$k\E " \
     && ok "prefix $k is bound" || no "prefix $k is bound" 'bound' 'missing'
 done

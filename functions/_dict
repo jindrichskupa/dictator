@@ -8,6 +8,7 @@ cmds=(
   'up:revive sessions a reboot killed'
   'cd:cd this shell into a session directory'
   'note:annotate a session'
+  'rename:retitle a session'
   'kill:stop a session but keep it in the list'
   'rm:end sessions for good'
   'prune:forget everything stale'
