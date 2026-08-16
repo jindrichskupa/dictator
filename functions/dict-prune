@@ -1,0 +1,37 @@
+# dict prune [days] — the weekly sweep. Offers everything that is not alive and
+# has not been touched for a while, so forgetting ninety stale sessions is one
+# keystroke instead of ninety.
+#
+# Worktrees that still hold work are kept even here; see _dict_forget.
+emulate -L zsh
+_dict_require jq fzf || return 1
+
+integer days=${1:-7}
+local -a stale
+stale=(${(f)"$(_dict_stale $days)"})
+
+(( $#stale )) || {
+  print -r -- "dict: nothing untouched for more than ${days}d"
+  return 0
+}
+
+print -r -- "dict: ${#stale} session(s) untouched for more than ${days}d"
+local -a rows
+rows=(${(f)"$(_dict_rows color)"})
+local r
+for r in $rows; do
+  (( ${stale[(I)${r%%$'\x1f'*}]} )) && print -r -- "  ${r#*$'\x1f'}"
+done
+print
+
+_dict_confirm 'prune' "forget all ${#stale}?" no || {
+  print -r -- 'dict: nothing removed'
+  return 1
+}
+
+local id
+integer failures=0
+for id in $stale; do
+  _dict_forget $id || (( failures++ ))
+done
+(( failures == 0 ))

@@ -1,0 +1,19 @@
+# dict up — bring back sessions a reboot killed. Nothing runs at boot; this is
+# deliberate, so finished work does not get resurrected.
+emulate -L zsh
+_dict_require tmux jq || return 1
+
+local -a ids
+if (( $# )); then
+  ids=($@)
+else
+  ids=(${(f)"$(_dict_pick --multi --only dead)"})
+fi
+(( $#ids )) || return 1
+
+local id
+integer failures=0
+for id in $ids; do
+  _dict_revive $id || (( failures++ ))
+done
+(( failures == 0 ))

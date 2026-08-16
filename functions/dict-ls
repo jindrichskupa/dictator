@@ -1,0 +1,18 @@
+# dict ls — every registered session, with the state it is actually in.
+# Formatting lives in _dict_rows, shared with the fzf picker so the two views
+# can never drift apart.
+emulate -L zsh
+_dict_require jq || return 1
+
+local mode=plain
+[[ -t 1 ]] && mode=color        # no escape codes when piped to a file
+
+local -a rows
+rows=(${(f)"$(_dict_rows $mode)"}) || true
+(( $#rows )) || {
+  print -r -- 'dict: no sessions yet — create one with: dict new'
+  return 0
+}
+
+# Strip the hidden id field; only the picker needs it.
+print -rl -- ${rows#*$'\x1f'}

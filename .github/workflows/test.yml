@@ -1,0 +1,47 @@
+name: test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    # Parsing is worth checking on Linux even though the suite is macOS-only:
+    # it catches typos in every file in seconds.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Parse every shell file
+        run: |
+          set -e
+          for f in dictator.plugin.zsh lib/*.zsh functions/* test/*.sh; do
+            zsh -n "$f" && echo "ok  $f"
+          done
+          sh -n hooks/dict-status.sh && echo "ok  hooks/dict-status.sh"
+
+  test:
+    # The suite uses BSD date and stat, and drives a real tmux server.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install tmux fzf jq
+      - name: Run the suite
+        run: zsh test/dict_test.sh
+
+  tmux-versions:
+    # display-popup landed in tmux 3.2; guard the documented floor.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install tmux fzf jq
+      - name: Check the tmux version meets the documented minimum
+        run: |
+          v=$(tmux -V | sed 's/tmux //;s/[a-z]*$//')
+          echo "tmux $v"
+          awk -v v="$v" 'BEGIN { exit (v + 0 >= 3.2) ? 0 : 1 }'

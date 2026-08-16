@@ -1,0 +1,9 @@
+# dict note — annotate a session, so "what was this again" has an answer.
+emulate -L zsh
+_dict_require jq || return 1
+
+local id=${1:-}
+[[ -n $id ]] || { print -ru2 -- 'usage: dict note <id> <text>'; return 1 }
+shift
+_dict_get $id >/dev/null 2>&1 || { print -ru2 -- "dict: unknown session: $id"; return 1 }
+_dict_set $id note "$*"

@@ -1,0 +1,9 @@
+# Design notes and implementation plans — local only, not published.
+docs/
+
+# Local environment, never committed.
+.env
+.env.*
+
+.DS_Store
+*.swp

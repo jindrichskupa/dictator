@@ -1,0 +1,37 @@
+# dict kill — stop a session without forgetting it. The tmux session and the
+# process go; the registry entry, the worktree and the conversation stay, so
+# `dict up` brings it all back later.
+#
+# Offers every session that still has a tmux session behind it — running,
+# waiting, done and ended alike. Only dead and orphan have nothing to stop.
+#
+# This is the reversible half of `dict rm`.
+emulate -L zsh
+_dict_require tmux jq || return 1
+
+local -a ids
+if (( $# )); then
+  ids=($@)
+else
+  ids=(${(f)"$(_dict_pick --multi --alive)"})
+fi
+(( $#ids )) || return 1
+
+# Refuse unknown ids before asking anything, so a typo cannot reach a dialog.
+local id
+for id in $ids; do
+  _dict_get $id >/dev/null 2>&1 || {
+    print -ru2 -- "dict: unknown session: $id"
+    return 1
+  }
+done
+
+_dict_confirm 'kill' "stop ${#ids} session(s)? they stay in the list" yes || return 1
+
+integer failures=0
+for id in $ids; do
+  _dict_tmux kill-session -t "=$(_dict_get $id | jq -r '.tmux')" 2>/dev/null
+  _dict_status_set $id ended
+  print -r -- "dict: stopped $id  ${${:-— revive with: dict up $id}}"
+done
+(( failures == 0 ))

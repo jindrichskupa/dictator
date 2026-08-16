@@ -1,0 +1,34 @@
+# dict sw — switch to a running session. The only picker there is: a read-only
+# overview you cannot act from is just a wall of text.
+emulate -L zsh
+_dict_require tmux fzf jq || return 1
+
+local id=${1:-}
+if [[ -z $id ]] || ! _dict_get $id >/dev/null 2>&1; then
+  id=$(_dict_pick "$id") || return 1
+fi
+[[ -n $id ]] || return 1
+
+local entry tname state
+entry=$(_dict_get $id) || { print -ru2 -- "dict: unknown session: $id"; return 1 }
+tname=$(print -r -- $entry | jq -r '.tmux')
+
+if ! _dict_tmux has-session -t "=$tname" 2>/dev/null; then
+  # Offer the obvious next step instead of just refusing.
+  state=$(_dict_state_of $id)
+  if [[ $state == orphan ]]; then
+    print -ru2 -- "dict: '$id' has no directory any more — remove it with: dict rm $id"
+    return 1
+  fi
+  if _dict_confirm 'not running' "'$id' is not running — revive it?" yes; then
+    _dict_revive $id || return 1
+  else
+    return 1
+  fi
+fi
+
+if [[ -n ${TMUX:-} ]]; then
+  _dict_tmux switch-client -t "=$tname"
+else
+  _dict_tmux attach -t "=$tname"
+fi

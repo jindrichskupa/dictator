@@ -1,0 +1,73 @@
+# dict new — pick a repository, name the work, start a session running Claude.
+# Every prompt is an fzf dialog in the shared style, so the whole flow looks
+# like one tool instead of a shell script asking questions.
+emulate -L zsh
+_dict_require tmux fzf jq git || return 1
+
+local refresh=''
+[[ ${1:-} == --refresh ]] && { refresh=--refresh; shift }
+
+# --print-query keeps whatever was typed on the first line, so a path that does
+# not exist yet is still a valid choice.
+local repo
+repo=$(_dict_repos $refresh \
+  | _dict_fzf 'repository' 'enter  select      type a new path to create it      esc  cancel' \
+      --print-query --preview-window=hidden \
+  | tail -1)
+[[ -n $repo ]] || return 1
+repo=${~repo}
+
+if [[ ! -d $repo ]]; then
+  _dict_confirm 'create' "$repo does not exist — create it?" no || return 1
+  mkdir -p $repo || return 1
+fi
+
+local title id
+title=$(_dict_ask 'title' 'what is this work?  enter to accept      esc  cancel')
+[[ -n $title ]] || { print -ru2 -- 'dict: a title is required'; return 1 }
+
+id=$(_dict_ask 'ticket id' 'enter to accept the suggestion, or type your own' "$(_dict_slug "$title")")
+[[ -n $id ]] || id=$(_dict_slug "$title")
+
+if _dict_get $id >/dev/null 2>&1; then
+  print -ru2 -- "dict: session '$id' already exists — switch to it with: dict sw $id"
+  return 1
+fi
+
+local dir=$repo branch='-' worktree=false wtpath
+if _dict_confirm 'worktree' "create a git worktree for '$id'?" no; then
+  if wtpath=$(_dict_worktree_add $repo $id); then
+    dir=$wtpath; branch=$id; worktree=true
+  else
+    # A git failure must not cost the session: fall back to the main checkout.
+    print -ru2 -- "dict: worktree failed, using $repo instead"
+  fi
+fi
+
+local uuid tname
+uuid=$(uuidgen | tr 'A-Z' 'a-z')
+tname=dict-$id
+
+# -e sets the variable for the shell tmux is about to start; `set-environment`
+# would be too late, the shell would already be running without it.
+# The program is the session's first process, not something typed into a shell
+# afterwards — see _dict_launch_cmd for why.
+_dict_tmux new-session -d -s $tname -c $dir -e DICTATOR_ID=$id \
+  "$(_dict_launch_cmd "$(_dict_program) --session-id $uuid")" || {
+  print -ru2 -- 'dict: could not create the tmux session'
+  return 1
+}
+
+_dict_add "$(jq -nc \
+  --arg id "$id" --arg title "$title" --arg repo "$repo" --arg dir "$dir" \
+  --arg tmux "$tname" --arg cs "$uuid" --arg branch "$branch" \
+  --arg created "$(_dict_now)" --argjson wt $worktree \
+  '{id:$id,title:$title,repo:$repo,dir:$dir,tmux:$tmux,claude_session:$cs,
+    worktree:$wt,branch:$branch,created:$created,note:""}')"
+_dict_status_set $id running
+
+if [[ -n ${TMUX:-} ]]; then
+  _dict_tmux switch-client -t "=$tname"
+else
+  _dict_tmux attach -t "=$tname"
+fi

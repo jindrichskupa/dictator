@@ -1,0 +1,25 @@
+#compdef dict
+
+local -a cmds
+cmds=(
+  'new:create a session'
+  'ls:list every session and its state'
+  'sw:switch to a running session'
+  'up:revive sessions a reboot killed'
+  'cd:cd this shell into a session directory'
+  'note:annotate a session'
+  'kill:stop a session but keep it in the list'
+  'rm:end sessions for good'
+  'prune:forget everything stale'
+  'reload:re-source the library'
+  'help:every command, key and state'
+)
+
+if (( CURRENT == 2 )); then
+  _describe 'command' cmds
+  return
+fi
+
+local -a ids
+ids=(${(f)"$(_dict_all 2>/dev/null | jq -r '.id + ":" + .title')"})
+(( $#ids )) && _describe 'session' ids
