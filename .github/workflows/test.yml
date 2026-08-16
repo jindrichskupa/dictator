@@ -12,7 +12,7 @@ jobs:
     # it catches typos in every file in seconds.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install zsh
         run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Parse every shell file
@@ -27,7 +27,7 @@ jobs:
     # The suite uses BSD date and stat, and drives a real tmux server.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: brew install tmux fzf jq
       - name: Run the suite
@@ -37,7 +37,7 @@ jobs:
     # display-popup landed in tmux 3.2; guard the documented floor.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: brew install tmux fzf jq
       - name: Check the tmux version meets the documented minimum
