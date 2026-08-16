@@ -1,9 +1,9 @@
-# Formula for the tap repository jindrichskupa/homebrew-tap.
+# Source of truth for Formula/dictator.rb in jindrichskupa/homebrew-tap.
+# The `tap` job in .github/workflows/release.yml copies it there on every tag,
+# rewriting url and sha256. Edit it here, not in the tap.
 #
-# It does NOT live here at runtime: copy it to Formula/dictator.rb in the tap,
-# or let the `tap` job in .github/workflows/release.yml keep it up to date.
-#
-# url and sha256 are rewritten on every release; the rest is stable.
+# A formula rather than a cask — the tap's franta is a cask because it ships a
+# prebuilt binary; dictator is shell source, which is what formulae are for.
 class Dictator < Formula
   desc "One registry of Claude Code sessions across every repository"
   homepage "https://github.com/jindrichskupa/dictator"
