@@ -3,6 +3,16 @@ name: release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish, e.g. v0.1.0'
+        required: true
+
+# A tag push sets github.ref_name to the tag; a manual run sets it to the
+# branch, so the tag has to come from the input instead.
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -12,6 +22,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
       - name: Install dependencies
         run: brew install tmux fzf jq
       - name: Run the suite
@@ -24,6 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ env.TAG }}
           fetch-depth: 0
       - name: Create the release
         env:
@@ -31,12 +44,12 @@ jobs:
         run: |
           # Idempotent: a re-run must not fail on "tag_name already exists",
           # or the tap job that depends on this one never gets to run.
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            echo "Release ${GITHUB_REF_NAME} already exists; leaving it alone."
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; leaving it alone."
             exit 0
           fi
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
+          gh release create "${TAG}" \
+            --title "${TAG}" \
             --generate-notes \
             --verify-tag
 
@@ -58,6 +71,8 @@ jobs:
       TAP_BRANCH: master
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
 
       - name: Check for the tap token
         id: gate
@@ -75,7 +90,7 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         id: sha
         run: |
-          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
           curl -sSfL "$url" -o release.tar.gz
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "sha=$(shasum -a 256 release.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
@@ -97,14 +112,15 @@ jobs:
           sed -i -E "s|^  url \".*\"|  url \"${URL}\"|"       Formula/dictator.rb
           sed -i -E "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" Formula/dictator.rb
 
-          # Re-running the same tag must not fail the job.
-          if git diff --quiet -- Formula/dictator.rb; then
-            echo "Formula already up to date; nothing to push."
-            exit 0
-          fi
-
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/dictator.rb
-          git commit -m "dictator ${GITHUB_REF_NAME}"
+
+          # Staged, not working-tree: `git diff` ignores untracked files, so a
+          # brand new formula looked like "no change" and was silently skipped.
+          if git diff --cached --quiet -- Formula/dictator.rb; then
+            echo "Formula already up to date; nothing to push."
+            exit 0
+          fi
+          git commit -m "dictator ${TAG}"
           git push origin "$TAP_BRANCH"
