@@ -3,6 +3,9 @@
 set -u
 
 DICT_ROOT=${0:A:h:h}
+# Running the suite from inside a dictator session would otherwise leak that
+# session's id into the hook tests, which check what happens without one.
+unset DICTATOR_ID
 export DICTATOR_STATE=$(mktemp -d)
 # Its own socket, so a stray kill in here can never reach a real tmux server.
 export DICTATOR_SOCKET=dictator-test-$$

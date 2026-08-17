@@ -34,7 +34,8 @@ class Dictator < Formula
 
         "UserPromptSubmit": [{ "hooks": [{ "type": "command",
           "command": "#{opt_prefix}/hooks/dict-status.sh running" }] }],
-        "Notification":     [{ "hooks": [{ "type": "command",
+        "Notification":     [{ "matcher": "permission_prompt|agent_needs_input|elicitation_dialog|elicitation_url_dialog",
+          "hooks": [{ "type": "command",
           "command": "#{opt_prefix}/hooks/dict-status.sh waiting" }] }],
         "Stop":             [{ "hooks": [{ "type": "command",
           "command": "#{opt_prefix}/hooks/dict-status.sh done" }] }],

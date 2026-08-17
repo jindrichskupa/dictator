@@ -85,7 +85,8 @@ file already has hooks, **add** to it rather than overwriting.
     { "hooks": [{ "type": "command", "command": "<DICTATOR>/hooks/dict-status.sh running" }] }
   ],
   "Notification": [
-    { "hooks": [{ "type": "command", "command": "<DICTATOR>/hooks/dict-status.sh waiting" }] }
+    { "matcher": "permission_prompt|agent_needs_input|elicitation_dialog|elicitation_url_dialog",
+      "hooks": [{ "type": "command", "command": "<DICTATOR>/hooks/dict-status.sh waiting" }] }
   ],
   "Stop": [
     { "hooks": [{ "type": "command", "command": "<DICTATOR>/hooks/dict-status.sh done" }] }
@@ -95,6 +96,11 @@ file already has hooks, **add** to it rather than overwriting.
   ]
 }
 ```
+
+The `Notification` matcher is not optional. Without it the hook also catches
+`idle_prompt`, which fires about a minute after every finished turn — it would
+overwrite `done` with `waiting` and the state column would say "waiting" for
+everything.
 
 Nothing is added to `~/.tmux.conf` — dictator brings its own, see
 [Isolation](#isolation).
