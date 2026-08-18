@@ -187,6 +187,17 @@ zsh -ic 'eval "$(direnv export zsh)"; claude --session-id <uuid>
 Deliberately not `tmux send-keys`: that types into a shell that may still be
 starting and loses characters when it loses the race.
 
+### The id is the key
+
+The id you accept in `dict new` is also the tmux session name and, with a
+worktree, the branch name — so it is slugged whether it was suggested or typed.
+A dot would otherwise make tmux read the rest as a pane index and the session
+would read `dead` for ever.
+
+Two sessions can never share an id. Naming a second one the same way says so
+and offers the next free id (`fix-login`, then `fix-login-2`) instead of
+dropping you back to the shell.
+
 ### Resume is addressed, not guessed
 
 `dict new` generates a UUID and passes `--session-id <uuid>`, so the

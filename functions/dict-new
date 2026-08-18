@@ -27,11 +27,20 @@ title=$(_dict_ask 'title' 'what is this work?  enter to accept      esc  cancel'
 [[ -n $title ]] || { print -ru2 -- 'dict: a title is required'; return 1 }
 
 id=$(_dict_ask 'ticket id' 'enter to accept the suggestion, or type your own' "$(_dict_slug "$title")")
-[[ -n $id ]] || id=$(_dict_slug "$title")
+# A typed id goes through the same sieve as a generated one: it becomes a tmux
+# session name and a branch name, and a dot in either makes tmux read the rest
+# as a pane index, so the session would look dead for ever.
+id=$(_dict_slug "${id:-$title}")
+[[ -n $id ]] || { print -ru2 -- 'dict: that id has no letters or digits in it'; return 1 }
 
+# Same title twice lands on the same suggested id. Say so, and offer the next
+# free one instead of throwing the whole dialog away.
 if _dict_get $id >/dev/null 2>&1; then
+  local free
+  free=$(_dict_free_id $id)
   print -ru2 -- "dict: session '$id' already exists — switch to it with: dict sw $id"
-  return 1
+  _dict_confirm 'duplicate' "'$id' is taken — use '$free' instead?" yes || return 1
+  id=$free
 fi
 
 local dir=$repo branch='-' worktree=false wtpath

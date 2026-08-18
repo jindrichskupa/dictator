@@ -43,6 +43,16 @@ fails 'missing status returns non-zero' _dict_status_get nope
 
 t 'slug'
 eq 'slug of a title' 'fix-billing-rounding' "$(_dict_slug 'Fix: Billing  Rounding!')"
+# A dot would make tmux read the rest of the name as a pane index.
+eq 'slug of a typed id'  'v1-2-hotfix' "$(_dict_slug 'v1.2 HOTFIX')"
+eq 'slug of pure junk'   ''            "$(_dict_slug '...')"
+
+t 'free id'
+eq 'untaken id is returned as is' 'a-9' "$(_dict_free_id a-9)"
+eq 'taken id gets a suffix'       'a-2-2' "$(_dict_free_id a-2)"
+_dict_add '{"id":"a-2-2","title":"dup","dir":"/tmp","tmux":"dict-a-2-2","note":""}'
+eq 'suffix counts up past the taken one' 'a-2-3' "$(_dict_free_id a-2)"
+_dict_remove a-2-2
 
 t 'require'
 fails 'missing command detected' _dict_require definitely-not-a-real-command

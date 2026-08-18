@@ -48,6 +48,19 @@ _dict_slug() {
     | cut -c1-40
 }
 
+# The first id in the -2, -3 … series that no session holds. Used when the
+# suggested id is taken: an id is also a tmux session name and a branch name,
+# so two sessions can never share one.
+_dict_free_id() {
+  local base=$1
+  integer n=1
+  while _dict_get $base >/dev/null 2>&1; do
+    (( n++ ))
+    base=${1}-$n
+  done
+  print -r -- "$base"
+}
+
 _dict_require() {
   local c
   local -a missing
