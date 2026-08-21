@@ -9,7 +9,7 @@ local -a ids
 if (( $# )); then
   ids=($@)
 else
-  ids=(${(f)"$(_dict_pick --multi)"})
+  ids=(${(f)"$(_dict_pick --multi --action remove)"})
 fi
 (( $#ids )) || return 1
 

@@ -13,7 +13,7 @@ local -a ids
 if (( $# )); then
   ids=($@)
 else
-  ids=(${(f)"$(_dict_pick --multi --alive)"})
+  ids=(${(f)"$(_dict_pick --multi --alive --action kill)"})
 fi
 (( $#ids )) || return 1
 

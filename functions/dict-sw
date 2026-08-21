@@ -5,7 +5,7 @@ _dict_require tmux fzf jq || return 1
 
 local id=${1:-}
 if [[ -z $id ]] || ! _dict_get $id >/dev/null 2>&1; then
-  id=$(_dict_pick "$id") || return 1
+  id=$(_dict_pick --action switch "$id") || return 1
 fi
 [[ -n $id ]] || return 1
 

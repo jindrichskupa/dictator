@@ -183,6 +183,12 @@ fails 'filter with no matches returns non-zero' _dict_pick --only running
 # query reaches the picker instead of being mistaken for a flag.
 eq 'a query still lists every candidate' 4 \
    "$(DICT_PICK_LINES_ONLY=1 _dict_pick s-dead 2>/dev/null | wc -l | tr -d ' ')"
+# --action names the dialog and the enter key; its value must not be swallowed
+# as the query, nor leave the option loop mid-list.
+eq 'action verb is consumed as a flag' 3 \
+   "$(DICT_PICK_LINES_ONLY=1 _dict_pick --action revive --only dead 2>/dev/null | wc -l | tr -d ' ')"
+eq 'action verb combines with multi' 4 \
+   "$(DICT_PICK_LINES_ONLY=1 _dict_pick --multi --action remove 2>/dev/null | wc -l | tr -d ' ')"
 
 t 'preview target'
 # The picker's preview once silently showed "(not running)" for live sessions

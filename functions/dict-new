@@ -10,9 +10,13 @@ local refresh=''
 # --print-query keeps whatever was typed on the first line, so a path that does
 # not exist yet is still a valid choice.
 local repo
+# ctrl-r rescans without leaving the dialog: the list is a day-old cache, so a
+# repository cloned since the last scan is missing exactly when you reach for
+# it. fzf reloads in its own shell, which has no functions — hence the source.
 repo=$(_dict_repos $refresh \
-  | _dict_fzf 'repository' 'enter  select      type a new path to create it      esc  cancel' \
+  | _dict_fzf 'repository' 'enter  select      ctrl-r  rescan      type a new path to create it      esc  cancel' \
       --print-query --preview-window=hidden \
+      --bind "ctrl-r:reload(zsh -fc 'source $DICTATOR_HOME/dictator.plugin.zsh; _dict_repos --refresh')" \
   | tail -1)
 [[ -n $repo ]] || return 1
 repo=${~repo}

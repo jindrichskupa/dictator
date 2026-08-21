@@ -323,10 +323,13 @@ _dict_rows() {
 # the visible column layout is free to change without breaking selection.
 # DICT_PICK_LINES_ONLY=1 prints the rows and skips fzf, so tests can assert.
 _dict_pick() {
-  local query='' only='' multi='' alive=''
+  # The verb names the dialog and the enter key: one picker serves sw, kill,
+  # rm, up, rename and cd, and they are indistinguishable without it.
+  local query='' only='' multi='' alive='' action=switch
   while (( $# )); do
     case $1 in
-      --multi) multi=--multi; shift ;;
+      --multi)  multi=--multi; shift ;;
+      --action) action=$2; shift 2 ;;
       --only)  only=$2; shift 2 ;;
       # "alive" is not a state: running, waiting, done and ended all still have
       # a tmux session behind them. Only dead and orphan do not.
@@ -355,8 +358,8 @@ _dict_pick() {
   # prefix-matching dict-foo against dict-foo-2.
   local preview_cmd="tmux -L $(_dict_socket) capture-pane -pt '=dict-{1}:' 2>/dev/null || echo '(not running)'"
 
-  local header='type to filter by title or repo      enter  switch      esc  cancel'
-  [[ -n $multi ]] && header='type to filter      tab  mark      enter  revive      esc  cancel'
+  local header="type to filter by title or repo      enter  $action      esc  cancel"
+  [[ -n $multi ]] && header="type to filter      tab  mark      enter  $action      esc  cancel"
 
   # A query that already narrows it to one session needs no keystroke to
   # confirm: `dict sw helm` should just switch.
@@ -364,7 +367,7 @@ _dict_pick() {
   [[ -n $query && -z $multi ]] && decisive=(--select-1 --exit-0)
 
   print -rl -- $rows \
-    | _dict_fzf 'sessions' "$header" \
+    | _dict_fzf "$action" "$header" \
         --delimiter=$'\x1f' --with-nth=2 $multi --query="$query" $decisive \
         --preview=$preview_cmd --preview-window='right,50%,border-left' \
     | cut -d $'\x1f' -f1

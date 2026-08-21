@@ -144,7 +144,13 @@ not affect your other tmux sessions.
 | `prefix r` | reload the tmux config |
 | `prefix w` `(` `)` `L` `d` | tree, previous, next, last, detach — native tmux |
 
-In the picker, typing filters on title, repository and id at once.
+In the picker, typing filters on title, repository and id at once. The dialog
+is labelled with what enter will do — `switch`, `kill`, `remove`, `revive` — so
+one look tells you which list you are in.
+
+The repository list in `dict new` is a cache, rescanned once a day. `ctrl-r`
+rescans it from inside the dialog, for the repository you cloned five minutes
+ago; `dict new --refresh` does the same from the shell.
 
 `prefix Enter` is the one worth remembering: a throwaway shell already in the
 session's directory (worktree included), for everything that is quicker to type

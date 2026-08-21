@@ -4,7 +4,7 @@ emulate -L zsh
 _dict_require jq || return 1
 
 local id=${1:-}
-[[ -n $id ]] || { id=$(_dict_pick) || return 1 }
+[[ -n $id ]] || { id=$(_dict_pick --action cd) || return 1 }
 
 local entry target
 entry=$(_dict_get $id) || { print -ru2 -- "dict: unknown session: $id"; return 1 }
