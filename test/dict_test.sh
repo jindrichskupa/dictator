@@ -9,7 +9,14 @@ unset DICTATOR_ID
 export DICTATOR_STATE=$(mktemp -d)
 # Its own socket, so a stray kill in here can never reach a real tmux server.
 export DICTATOR_SOCKET=dictator-test-$$
-trap 'command tmux -L "$DICTATOR_SOCKET" kill-server 2>/dev/null; rm -rf "$DICTATOR_STATE"' EXIT
+CONFSOCK=dict-conf-$$
+# kill-server does not remove the socket file, and one per run adds up: this
+# suite had left ninety of them behind in the tmux socket directory.
+SOCKDIR=${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)
+trap 'command tmux -L "$DICTATOR_SOCKET" kill-server 2>/dev/null
+      command tmux -L "$CONFSOCK" kill-server 2>/dev/null
+      rm -f "$SOCKDIR/$DICTATOR_SOCKET" "$SOCKDIR/$CONFSOCK"
+      rm -rf "$DICTATOR_STATE"' EXIT
 
 source $DICT_ROOT/dictator.plugin.zsh
 
@@ -377,7 +384,6 @@ grep -q "$DICT_ROOT/dictator.plugin.zsh" $GEN \
   && ok 'popups carry an absolute plugin path' \
   || no 'popups carry an absolute plugin path' "$DICT_ROOT" 'missing'
 
-CONFSOCK=dict-conf-$$
 command tmux -L $CONFSOCK -f $GEN new-session -d -s conftest 2>/dev/null
 KEYS=$(command tmux -L $CONFSOCK list-keys 2>/dev/null)
 
