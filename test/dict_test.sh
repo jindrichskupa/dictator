@@ -190,6 +190,18 @@ eq 'action verb is consumed as a flag' 3 \
 eq 'action verb combines with multi' 4 \
    "$(DICT_PICK_LINES_ONLY=1 _dict_pick --multi --action remove 2>/dev/null | wc -l | tr -d ' ')"
 
+t 'where'
+# The row for one session, id stripped, in the layout `dict ls` uses.
+WHERE=$(dict-where s-dead 2>/dev/null)
+print -r -- "$WHERE" | grep -q 's-dead' && ok 'where names the session' \
+  || no 'where names the session' 's-dead' "$WHERE"
+print -r -- "$WHERE" | grep -q $'\x1f' && no 'where drops the hidden id field' 'no \\x1f' 'field present' \
+  || ok 'where drops the hidden id field'
+# In a session it takes the id from the environment, prefixed or not.
+eq 'where reads DICTATOR_ID'      "$WHERE" "$(DICTATOR_ID=s-dead dict-where 2>/dev/null)"
+eq 'where accepts the tmux name'  "$WHERE" "$(dict-where dict-s-dead 2>/dev/null)"
+fails 'where on an unknown id fails' dict-where nope-nope
+
 t 'preview target'
 # The picker's preview once silently showed "(not running)" for live sessions
 # because capture-pane was handed a session target instead of a pane target.

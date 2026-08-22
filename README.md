@@ -118,6 +118,7 @@ start, so your other sessions are unaffected.
 | `dict sw [query]` | switch; a query matching one session goes straight there |
 | `dict up [id…]` | revive sessions a reboot killed, conversation intact |
 | `dict cd [id]` | move the calling shell into a session's directory |
+| `dict where [id]` | which session this shell is in — title, repository, state |
 | `dict note <id> <text>` | annotate |
 | `dict rename [id] [title…]` | retitle a session; the id, branch and worktree stay as they are |
 | `dict kill [id…]` | stop a session, keep it in the list |
@@ -140,6 +141,7 @@ not affect your other tmux sessions.
 | `prefix X` | forget a session (permanent) |
 | `prefix Enter` | a shell in the session's directory, as a popup |
 | `prefix c` / `\|` / `-` | the same as a window / horizontal split / vertical split |
+| `prefix i` | which session is this — one line in the status area |
 | `prefix ?` | help |
 | `prefix r` | reload the tmux config |
 | `prefix w` `(` `)` `L` `d` | tree, previous, next, last, detach — native tmux |

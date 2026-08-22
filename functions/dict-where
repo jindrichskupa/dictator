@@ -1,0 +1,21 @@
+# dict where — which session is this shell in?
+#
+# The tmux status bar carries the session name; this answers the rest of it,
+# the title, the repository and the state, in the same row layout `dict ls`
+# uses. Inside a popup shell, where there is no status bar at all, it is the
+# only thing that knows.
+emulate -L zsh
+_dict_require jq || return 1
+
+# The session's own id comes from the environment tmux was given at launch;
+# a name on the command line wins, so this doubles as "tell me about that one".
+local id=${1:-${DICTATOR_ID:-$(_dict_tmux display-message -p '#S' 2>/dev/null)}}
+id=${id#dict-}
+[[ -n $id ]] || { print -ru2 -- 'dict: not in a dictator session'; return 1 }
+_dict_get $id >/dev/null 2>&1 || { print -ru2 -- "dict: unknown session: $id"; return 1 }
+
+local mode=plain
+[[ -t 1 ]] && mode=color
+# The id is the row's hidden first field, so anchor: "helm" must not match
+# the row for "helm-2".
+_dict_rows $mode | grep "^${id}"$'\x1f' | cut -d $'\x1f' -f2-

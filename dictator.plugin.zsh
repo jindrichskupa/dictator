@@ -11,7 +11,7 @@ export DICTATOR_HOME=${0:A:h}
 source $DICTATOR_HOME/lib/core.zsh
 
 fpath=($DICTATOR_HOME/functions $fpath)
-autoload -Uz dict-new dict-ls dict-sw dict-up dict-rm dict-note dict-rename dict-cd dict-prune dict-help dict-kill
+autoload -Uz dict-new dict-ls dict-sw dict-up dict-rm dict-note dict-rename dict-cd dict-prune dict-help dict-kill dict-where
 
 # lib/core.zsh is sourced once per shell, while functions/ is autoloaded fresh
 # from disk on every call. Editing the library therefore leaves running shells
@@ -36,7 +36,7 @@ dict() {
   local cmd=${1:-ls}
   (( $# )) && shift
   case $cmd in
-    new|ls|sw|up|rm|note|rename|cd|prune|kill) dict-$cmd "$@" ;;
+    new|ls|sw|up|rm|note|rename|cd|prune|kill|where) dict-$cmd "$@" ;;
     reload)                  dict-reload ;;
     help|-h|--help|'-?')     dict-help ;;
     *) print -ru2 -- "dict: unknown command: $cmd"; dict-help; return 1 ;;

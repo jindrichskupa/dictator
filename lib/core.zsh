@@ -369,7 +369,8 @@ _dict_pick() {
   print -rl -- $rows \
     | _dict_fzf "$action" "$header" \
         --delimiter=$'\x1f' --with-nth=2 $multi --query="$query" $decisive \
-        --preview=$preview_cmd --preview-window='right,50%,border-left' \
+        --preview=$preview_cmd \
+        --preview-window='right,50%,border-left,follow,<220(down,55%,border-top,follow)' \
     | cut -d $'\x1f' -f1
 }
 

@@ -12,6 +12,7 @@ cmds=(
   'kill:stop a session but keep it in the list'
   'rm:end sessions for good'
   'prune:forget everything stale'
+  'where:which session is this shell in'
   'reload:re-source the library'
   'help:every command, key and state'
 )
