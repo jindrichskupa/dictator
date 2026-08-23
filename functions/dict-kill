@@ -30,8 +30,12 @@ _dict_confirm 'kill' "stop ${#ids} session(s)? they stay in the list" yes || ret
 
 integer failures=0
 for id in $ids; do
-  _dict_tmux kill-session -t "=$(_dict_get $id | jq -r '.tmux')" 2>/dev/null
+  local tname
+  tname=$(_dict_get $id | jq -r '.tmux')
+  # Status first: killing the session can take this popup with it, and a
+  # stopped session that still reads "running" is worse than a slow one.
   _dict_status_set $id ended
+  _dict_tmux kill-session -t "=$tname" 2>/dev/null
   print -r -- "dict: stopped $id  ${${:-— revive with: dict up $id}}"
 done
 (( failures == 0 ))

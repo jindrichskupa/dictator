@@ -473,8 +473,11 @@ _dict_forget() {   # $1 = id
   dir=$(print -r -- $entry | jq -r '.dir')
   repo=$(print -r -- $entry | jq -r '.repo')
 
-  _dict_tmux kill-session -t "=$tname" 2>/dev/null
-
+  # The tmux session dies last. `dict rm` usually runs in a popup owned by a
+  # client sitting in that very session, and killing it can take the popup
+  # down mid-run — that is how a session used to end up killed but still
+  # listed, needing a second `dict rm` to finish the job. Everything that
+  # must survive happens first; the kill is the only step nothing follows.
   if [[ $(print -r -- $entry | jq -r '.worktree') == true && -d $dir ]]; then
     if _dict_worktree_has_work $dir; then
       print -r -- "dict: $id: worktree kept, it still has work — $dir"
@@ -487,6 +490,7 @@ _dict_forget() {   # $1 = id
 
   _dict_remove $id
   rm -f "$(_dict_status_file $id)"
+  _dict_tmux kill-session -t "=$tname" 2>/dev/null
   print -r -- "dict: forgot $id"
 }
 

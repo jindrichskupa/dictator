@@ -146,6 +146,10 @@ not affect your other tmux sessions.
 | `prefix r` | reload the tmux config |
 | `prefix w` `(` `)` `L` `d` | tree, previous, next, last, detach — native tmux |
 
+The status bar carries the same keys as a footnote on the right, shortened on
+narrow terminals; the session you are in is on the left, where nothing truncates
+it.
+
 In the picker, typing filters on title, repository and id at once. The dialog
 is labelled with what enter will do — `switch`, `kill`, `remove`, `revive` — so
 one look tells you which list you are in.
@@ -215,6 +219,18 @@ session and runs `claude --resume <uuid>`. No picker, no matching on titles.
 If the transcript is gone, `dict up` says so and starts a fresh conversation in
 the right directory rather than failing. Nothing starts at boot — reviving
 everything unconditionally would resurrect work that was already finished.
+
+### Removing the session you are in
+
+`dict rm` and `dict kill` usually run in a popup owned by the client sitting in
+the session they are about to destroy, so the kill goes last: the registry
+entry, the status file and the worktree are all dealt with before anything can
+take that popup down. A session that was killed but still listed, needing a
+second `dict rm`, was this ordering the other way round.
+
+The client is not thrown out either — `detach-on-destroy off` moves it to
+another session instead of dropping it back to the shell, whether the session
+ended because you removed it or because Claude quit.
 
 ### Stopping versus ending
 

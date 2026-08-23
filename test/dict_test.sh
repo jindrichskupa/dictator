@@ -320,6 +320,19 @@ fails 'entry gone from registry' _dict_get d-1
 [[ -f $(_dict_status_file d-1) ]] && no 'status file removed' 'absent' 'present' || ok 'status file removed'
 fails 'rm on unknown id fails' dict-rm d-nope
 
+# Ordering, not cosmetics: `dict rm` runs in a popup owned by a client that may
+# be sitting in the session being removed, and the kill can take that popup
+# down. Everything that must outlive the kill therefore happens before it — a
+# live session that is forgotten leaves no entry behind even if the run stops
+# at the kill.
+_dict_tmux new-session -d -s dict-d-live -c $GONE 2>/dev/null
+_dict_add "{\"id\":\"d-live\",\"title\":\"forget me while running\",\"repo\":\"$GONE\",\"dir\":\"$GONE\",\"tmux\":\"dict-d-live\",\"claude_session\":\"\",\"worktree\":false,\"branch\":\"-\",\"created\":\"$(_dict_now)\",\"note\":\"\"}"
+_dict_forget d-live >/dev/null
+fails 'a running session leaves no entry' _dict_get d-live
+_dict_tmux has-session -t '=dict-d-live' 2>/dev/null \
+  && no 'the tmux session is gone too' 'absent' 'present' \
+  || ok 'the tmux session is gone too'
+
 # A worktree with work survives being forgotten: the record goes, the code stays.
 _dict_add "{\"id\":\"wt-clean\",\"title\":\"keep my work\",\"repo\":\"$REPO\",\"dir\":\"$WT3\",\"tmux\":\"dict-wt-clean\",\"claude_session\":\"\",\"worktree\":true,\"branch\":\"wt-clean\",\"created\":\"$(_dict_now)\",\"note\":\"\"}"
 _dict_forget wt-clean >/dev/null
@@ -409,6 +422,15 @@ for k in N S R K X '?' r Enter c; do
   print -r -- $KEYS | grep -qE "T prefix +\Q$k\E " \
     && ok "prefix $k is bound" || no "prefix $k is bound" 'bound' 'missing'
 done
+# Without this a client whose session is destroyed is thrown out of tmux, and
+# the popup it was running dies with it.
+# The status bar doubles as the cheat sheet, so the keys have to survive
+# generation — a stray quote in the template would leave it empty.
+command tmux -L $CONFSOCK show-options -g status-right 2>/dev/null | grep -q 'switch' \
+  && ok 'the status bar carries the key hints' \
+  || no 'the status bar carries the key hints' 'switch' 'missing'
+eq 'destroyed sessions do not detach the client' 'detach-on-destroy off' \
+   "$(command tmux -L $CONFSOCK show-options -g detach-on-destroy 2>/dev/null)"
 eq 'prefix is C-a' 'prefix C-a' \
    "$(command tmux -L $CONFSOCK show-options -g prefix 2>/dev/null)"
 
