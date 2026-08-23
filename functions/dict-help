@@ -2,8 +2,10 @@
 # Autoloaded, so editing it takes effect without reloading the library.
 emulate -L zsh
 
+# Colour when a terminal is reading, and when a pager is: `dict help | less -R`
+# is how prefix ? shows this, and a help screen in one grey is harder to scan.
 local b='' d='' c='' r=''
-if [[ -t 1 ]]; then
+if [[ -t 1 || -n ${DICT_COLOR:-} ]]; then
   b=$'\e[1m'; d=$'\e[2m'; c=$'\e[36m'; r=$'\e[0m'
 fi
 

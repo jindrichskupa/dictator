@@ -17,11 +17,20 @@ autoload -Uz dict-new dict-ls dict-sw dict-up dict-rm dict-note dict-rename dict
 # from disk on every call. Editing the library therefore leaves running shells
 # with a stale half — this puts both halves back in sync without `exec zsh`.
 dict-reload() {
+  # Every autoloaded dict-* function starts this way; these two are defined
+  # here instead, so they have to ask for standard options themselves. Without
+  # it a shell with, say, bare_glob_qual off takes (N) literally and reload
+  # dies with "no matches found".
+  emulate -L zsh
   source $DICTATOR_HOME/lib/core.zsh || return 1
+  # Plain glob plus :t afterwards, not dict-*(:t): the modifier-in-parentheses
+  # form depends on shell options this function cannot count on, and when it is
+  # taken literally the glob matches nothing and reload dies with "no matches
+  # found". (N) keeps an empty directory from being an error too.
   local f
-  for f in $DICTATOR_HOME/functions/dict-*(:t); do
-    unfunction $f 2>/dev/null
-    autoload -Uz $f
+  for f in $DICTATOR_HOME/functions/dict-*(N); do
+    unfunction ${f:t} 2>/dev/null
+    autoload -Uz ${f:t}
   done
   # Regenerate the tmux config and push it into a running server, so editing
   # the template takes effect without restarting anything.
@@ -33,6 +42,7 @@ dict-reload() {
 
 # Defined here rather than autoloaded so that `dict cd` runs in the calling shell.
 dict() {
+  emulate -L zsh
   local cmd=${1:-ls}
   (( $# )) && shift
   case $cmd in

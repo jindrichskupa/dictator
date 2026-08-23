@@ -61,6 +61,19 @@ _dict_add '{"id":"a-2-2","title":"dup","dir":"/tmp","tmux":"dict-a-2-2","note":"
 eq 'suffix counts up past the taken one' 'a-2-3' "$(_dict_free_id a-2)"
 _dict_remove a-2-2
 
+t 'reload'
+# Reload must not care what the calling shell has done to its options: this one
+# turns off bare_glob_qual, which makes the (N) in the function's own glob
+# literal and used to end reload with "no matches found".
+(
+  unsetopt bareglobqual
+  dict-reload >/dev/null 2>&1
+) && ok 'reload survives exotic glob options' \
+  || no 'reload survives exotic glob options' 'reloaded' 'failed'
+# ... and it really did put the functions back.
+whence -w dict-where >/dev/null 2>&1 && ok 'reload leaves the functions loaded' \
+  || no 'reload leaves the functions loaded' 'defined' 'missing'
+
 t 'require'
 fails 'missing command detected' _dict_require definitely-not-a-real-command
 _dict_require jq && ok 'present command accepted' || no 'present command accepted' 0 1
@@ -136,6 +149,12 @@ eq 'result is cached'   2 "$(wc -l < $DICTATOR_STATE/repos.cache | tr -d ' ')"
 mkdir -p $FAKE/work/client/wt
 print -r -- 'gitdir: /elsewhere' > $FAKE/work/client/wt/.git
 eq 'finds worktree checkouts' 1 "$(_dict_repos --refresh | grep -c 'work/client/wt$' | tr -d ' ')"
+
+# Regression: a shell with bare_glob_qual off took the (N/) that filtered the
+# roots literally, decided no root existed, and wrote an empty cache — the
+# repository picker came up with nothing in it.
+eq 'a rescan survives exotic glob options' 3 \
+   "$( (unsetopt bareglobqual; _dict_repos --refresh) 2>/dev/null | grep -c . | tr -d ' ')"
 
 # Regression: zsh does no word splitting, so a "${VAR:-a b}" default would
 # collapse both roots into one bogus element and silently find nothing.

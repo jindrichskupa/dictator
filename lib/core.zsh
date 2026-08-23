@@ -169,16 +169,33 @@ _dict_roots() {
 
 # `-name .git` matches both a directory (normal clone) and a file (worktree).
 _dict_repos() {
+  # Called from popups, from fzf's reload and from whatever shell the user
+  # has: standard options, not theirs.
+  emulate -L zsh
   local cache
   cache=$(_dict_state_dir)/repos.cache
   if [[ ${1:-} == --refresh ]] || [[ ! -f $cache ]] || [[ -n $(find $cache -mtime +1 2>/dev/null) ]]; then
     local -a roots
-    roots=(${(f)"$(_dict_roots)"})
-    roots=(${^roots}(N/))          # drop roots that do not exist
+    local r
+    # A plain test per root, not a (N/) glob qualifier: a shell with
+    # bare_glob_qual off takes the qualifier literally, every root then "does
+    # not exist", and the rescan quietly wrote an empty cache — a picker with
+    # no repositories in it.
+    for r in ${(f)"$(_dict_roots)"}; do
+      [[ -d $r ]] && roots+=$r
+    done
     if (( $#roots )); then
-      find $roots -maxdepth 6 -name .git -print 2>/dev/null \
-        | sed 's|/\.git$||' | sort -u > $cache
+      # Through a temp file: an interrupted scan must not leave a truncated
+      # cache behind, which is indistinguishable from "you have no repos".
+      local tmp=$cache.$$
+      if find $roots -maxdepth 6 -name .git -print 2>/dev/null \
+           | sed 's|/\.git$||' | sort -u > $tmp; then
+        mv $tmp $cache
+      else
+        rm -f $tmp
+      fi
     else
+      print -ru2 -- "dict: none of the configured roots exist: ${(j:, :)${(f)$(_dict_roots)}}"
       : > $cache
     fi
   fi
