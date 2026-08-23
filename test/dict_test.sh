@@ -42,6 +42,8 @@ fails 'get on missing id returns non-zero' _dict_get a-1
 t 'malformed registry line'
 print -r -- 'this is not json' >> "$(_dict_registry)"
 eq 'malformed line skipped' 1 "$(_dict_all 2>/dev/null | wc -l | tr -d ' ')"
+_dict_all 2>&1 >/dev/null | grep -q 'malformed' \
+  && ok 'malformed line is reported' || no 'malformed line is reported' 'a warning' 'silence'
 
 t 'status files'
 _dict_status_set a-2 waiting

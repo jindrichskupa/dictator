@@ -74,20 +74,20 @@ _dict_require() {
 _dict_add() { print -r -- "$1" >> "$(_dict_registry)" }
 
 # Print every well-formed line; warn about the rest instead of dying.
+#
+# One jq for the whole file, not one per line. Validating line by line spawned
+# a process per session and was a third of the time the picker took to appear.
 _dict_all() {
-  local reg line
-  integer n=0
+  local reg out
+  integer total kept
   reg=$(_dict_registry)
   [[ -f $reg ]] || return 0
-  while IFS= read -r line; do
-    (( n++ ))
-    [[ -n $line ]] || continue
-    if print -r -- "$line" | jq -e . >/dev/null 2>&1; then
-      print -r -- "$line"
-    else
-      print -ru2 -- "dict: skipping malformed registry line $n"
-    fi
-  done < $reg
+  out=$(jq -Rc 'fromjson? // empty' $reg 2>/dev/null)
+  [[ -n $out ]] && print -r -- "$out"
+  total=$(grep -c . $reg)
+  kept=$([[ -n $out ]] && print -r -- "$out" | grep -c . || print -r -- 0)
+  (( total > kept )) && print -ru2 -- "dict: skipping $(( total - kept )) malformed registry line(s)"
+  return 0
 }
 
 _dict_get() {
@@ -128,13 +128,17 @@ _dict_status_get() {
   print -r -- "${line%% *}"
 }
 
-# BSD date on macOS; -j means "do not set the clock", -f gives the input format.
+# zsh/datetime rather than two `date` processes per row: with twenty sessions
+# that was forty forks every time the list was drawn. strftime -r reads in the
+# local zone, hence TZ.
 _dict_age() {
   local ts=$1
+  local -x TZ=UTC
   integer then now diff
-  then=$(date -u -j -f '%Y-%m-%dT%H:%M:%SZ' "$ts" +%s 2>/dev/null) || { print -r -- '?'; return }
+  zmodload -F zsh/datetime b:strftime p:EPOCHSECONDS 2>/dev/null
+  strftime -rs then '%Y-%m-%dT%H:%M:%SZ' "$ts" 2>/dev/null || { print -r -- '?'; return }
   (( then )) || { print -r -- '?'; return }
-  now=$(date -u +%s)
+  now=$EPOCHSECONDS
   diff=$(( now - then ))
   (( diff < 3600 ))  && { print -r -- "$(( diff / 60 ))m";    return }
   (( diff < 86400 )) && { print -r -- "$(( diff / 3600 ))h";  return }
