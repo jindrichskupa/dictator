@@ -480,6 +480,13 @@ command tmux -L default has-session -t '=iso-1' 2>/dev/null \
 eq 'socket is overridable' "dictator-test-$$" "$(_dict_socket)"
 eq 'template is the one in this checkout' "$DICT_ROOT/tmux/dictator.conf" "$(_dict_template)"
 eq 'config is generated into the state dir' "$DICTATOR_STATE/tmux.conf" "$(_dict_conf)"
+# The current-session bindings read $DICTATOR_ID in the popup's own shell. In
+# double quotes tmux would expand it while parsing the config, freezing the id
+# of whoever reloaded into the binding for everyone — a bug with no symptom
+# until you press the key in a different session.
+_dict_gen_conf
+eq 'DICTATOR_ID survives config generation unexpanded' \
+   2 "$(grep -c 'dict \(kill\|rm\) \$DICTATOR_ID' "$(_dict_conf)")"
 _dict_tmux kill-session -t '=iso-1' 2>/dev/null
 
 t 'session launches its program'
