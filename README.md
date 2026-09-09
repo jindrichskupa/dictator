@@ -139,6 +139,8 @@ not affect your other tmux sessions.
 | `prefix R` | rename a session (title only) |
 | `prefix K` | stop a session (reversible) |
 | `prefix X` | forget a session (permanent) |
+| `prefix C-k` | stop **this** session — no picker |
+| `prefix C-x` | forget **this** session — no picker, still asks |
 | `prefix Enter` | a shell in the session's directory, as a popup |
 | `prefix c` / `\|` / `-` | the same as a window / horizontal split / vertical split |
 | `prefix i` | which session is this — one line in the status area |
@@ -232,12 +234,17 @@ The client is not thrown out either — `detach-on-destroy off` moves it to
 another session instead of dropping it back to the shell, whether the session
 ended because you removed it or because Claude quit.
 
+`prefix C-k` and `prefix C-x` skip the picker and aim at the session you are
+already in: tmux substitutes its own name into the command, so the popup runs
+`dict kill <id>` or `dict rm <id>` on that one session and nothing else. There
+is no list to mis-click through, and `dict rm` still asks before it acts.
+
 ### Stopping versus ending
 
 | | | |
 |---|---|---|
-| `dict kill` | `prefix K` | stops the process; record, worktree and conversation stay. `dict up` brings it all back. |
-| `dict rm` | `prefix X` | forgets it. Irreversible, and always asks first. |
+| `dict kill` | `prefix K` · `prefix C-k` for this session | stops the process; record, worktree and conversation stay. `dict up` brings it all back. |
+| `dict rm` | `prefix X` · `prefix C-x` for this session | forgets it. Irreversible, and always asks first. |
 
 `dict prune [days]` is the weekly sweep: everything not alive and untouched for
 longer than the window, listed, then forgotten on one confirmation. Running and

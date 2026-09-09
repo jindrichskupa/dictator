@@ -32,6 +32,8 @@ print -r -- "    ${c}prefix S${r}                 switch session          ${d}fz
 print -r -- "    ${c}prefix R${r}                 rename a session        ${d}title only${r}"
 print -r -- "    ${c}prefix K${r}                 stop a session   ${d}reversible${r}"
 print -r -- "    ${c}prefix X${r}                 forget a session ${d}permanent${r}"
+print -r -- "    ${c}prefix C-k${r}               stop ${b}this${r} session  ${d}no picker${r}"
+print -r -- "    ${c}prefix C-x${r}               forget ${b}this${r} session ${d}no picker, still asks${r}"
 print -r -- "    ${c}prefix enter${r}             shell in this session's directory ${d}popup${r}"
 print -r -- "    ${c}prefix c${r}                 same, as a window"
 print -r -- "    ${c}prefix | -${r}               same, as a split"
