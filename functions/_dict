@@ -3,6 +3,7 @@
 local -a cmds
 cmds=(
   'new:create a session'
+  'adopt:take over a session started outside dictator'
   'ls:list every session and its state'
   'sw:switch to a running session'
   'up:revive sessions a reboot killed'

@@ -1,0 +1,51 @@
+# dict adopt <session-id> [title…] — take over a Claude Code session started
+# outside dictator. Quit it there first: two processes resuming one transcript
+# write over each other. The directory is the one the conversation ran in, read
+# from its transcript.
+emulate -L zsh
+setopt extended_glob
+_dict_require tmux jq git || return 1
+
+local uuid=${1:l}
+(( $# )) && shift
+[[ $uuid == [0-9a-f](#c8)-[0-9a-f](#c4)-[0-9a-f](#c4)-[0-9a-f](#c4)-[0-9a-f](#c12) ]] || {
+  print -ru2 -- 'dict: usage: dict adopt <session-id> [title]   (the uuid claude prints on exit)'
+  return 1
+}
+
+local held
+held=$(_dict_all 2>/dev/null | jq -r --arg u "$uuid" 'select(.claude_session == $u) | .id' | head -1)
+[[ -n $held ]] && { print -ru2 -- "dict: already adopted as '$held' — dict sw $held"; return 1 }
+
+local transcript dir repo
+transcript=$(_dict_transcript $uuid) || { print -ru2 -- "dict: no transcript for $uuid"; return 1 }
+dir=$(jq -Rrn 'first(inputs | fromjson? | .cwd? // empty | strings)' $transcript)
+[[ -d $dir ]] || { print -ru2 -- "dict: its directory is gone: ${dir:-unknown}"; return 1 }
+
+# The main checkout, not the worktree, so the row reads like the repository.
+# worktree stays false below: dictator did not create it, so rm must not delete it.
+repo=$(git -C $dir rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+  && repo=${repo:h} || repo=$dir
+
+local title=$*
+[[ -n $title ]] || title=$(_dict_ask 'title' 'what is this work?  enter to accept      esc  cancel' "${dir:t}")
+[[ -n $title ]] || { print -ru2 -- 'dict: a title is required'; return 1 }
+
+local id
+id=$(_dict_slug "$title")
+[[ -n $id ]] || { print -ru2 -- 'dict: that title has no letters or digits in it'; return 1 }
+id=$(_dict_free_id $id)
+
+_dict_add "$(jq -nc \
+  --arg id "$id" --arg title "$title" --arg repo "$repo" --arg dir "$dir" \
+  --arg tmux "dict-$id" --arg cs "$uuid" --arg created "$(_dict_now)" \
+  '{id:$id,title:$title,repo:$repo,dir:$dir,tmux:$tmux,claude_session:$cs,
+    worktree:false,branch:"-",created:$created,note:""}')"
+
+_dict_revive $id || return 1
+[[ -n ${DICT_REVIVE_DRY_RUN:-} ]] && return 0
+if [[ -n ${TMUX:-} ]]; then
+  _dict_tmux switch-client -t "=dict-$id"
+else
+  _dict_tmux attach -t "=dict-$id"
+fi

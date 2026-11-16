@@ -280,6 +280,22 @@ eq 'DICTATOR_ID is in the session environment' 'DICTATOR_ID=r-1' \
 eq 'reviving a live session is a no-op' 'dict: r-1 is already running' "$(_dict_revive r-1)"
 _dict_tmux kill-session -t '=dict-r-1' 2>/dev/null
 
+t 'adopt'
+ADIR=$DICTATOR_STATE/elsewhere
+mkdir -p $ADIR
+git -C $ADIR init -q
+AU=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+print -r -- '{"type":"x"}' > $CLAUDE_CONFIG_DIR/projects/-some-slug-abc123/$AU.jsonl
+print -r -- "{\"cwd\":\"$ADIR\"}" >> $CLAUDE_CONFIG_DIR/projects/-some-slug-abc123/$AU.jsonl
+eq 'adopt resumes the given session' "claude --resume $AU" \
+   "$(DICT_REVIVE_DRY_RUN=1 dict-adopt ${(U)AU} 'Adopted Work' 2>/dev/null)"
+eq 'adopted in its original directory' "$ADIR" "$(_dict_get adopted-work | jq -r .dir)"
+eq 'adopted worktree is never ours'    false   "$(_dict_get adopted-work | jq -r .worktree)"
+fails 'adopting twice refused'      dict-adopt $AU 'again'
+fails 'non-uuid refused'            dict-adopt 'nope; rm -rf /' x
+fails 'unknown transcript refused'  dict-adopt 99999999-0000-0000-0000-000000000000 x
+_dict_remove adopted-work
+
 t 'note'
 dict-note s-dead 'waiting on review'
 eq 'note stored'  'waiting on review'  "$(_dict_get s-dead | jq -r .note)"

@@ -397,11 +397,12 @@ _dict_pick() {
 
 # The projects directory name is derived from the path *and* a hash, so it is
 # cheaper to search for the transcript than to recompute the slug.
-_dict_transcript_exists() {
+_dict_transcript() {
   local hit
   hit=$(find "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects" -name "$1.jsonl" -print -quit 2>/dev/null)
-  [[ -n $hit ]]
+  [[ -n $hit ]] && print -r -- $hit
 }
+_dict_transcript_exists() { _dict_transcript $1 >/dev/null }
 
 _dict_revive() {
   local id=$1 entry dir tname uuid cmd

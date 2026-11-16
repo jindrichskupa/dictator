@@ -116,6 +116,7 @@ start, so your other sessions are unaffected.
 | `dict new [--refresh]` | pick a repository, name the work, optionally get a worktree |
 | `dict ls` | every session with its state and age |
 | `dict sw [query]` | switch; a query matching one session goes straight there |
+| `dict adopt <uuid> [title]` | take over a Claude session started outside dictator, in its original directory — quit it there first |
 | `dict up [id…]` | revive sessions a reboot killed, conversation intact |
 | `dict cd [id]` | move the calling shell into a session's directory |
 | `dict where [id]` | which session this shell is in — title, repository, state |
