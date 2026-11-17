@@ -1,4 +1,4 @@
-# dict adopt <session-id> [title…] — take over a Claude Code session started
+# dict adopt [session-id] [title…] — take over a Claude Code session started
 # outside dictator. Quit it there first: two processes resuming one transcript
 # write over each other. The directory is the one the conversation ran in, read
 # from its transcript.
@@ -8,8 +8,19 @@ _dict_require tmux jq git || return 1
 
 local uuid=${1:l}
 (( $# )) && shift
+if [[ -z $uuid ]]; then
+  local -a rows
+  rows=(${(f)"$(_dict_recent 30)"})
+  (( $#rows )) || { print -ru2 -- 'dict: no conversations to adopt'; return 1 }
+  if [[ -n ${DICT_PICK_LINES_ONLY:-} ]]; then print -rl -- $rows; return 0; fi
+  uuid=$(print -rl -- $rows \
+    | _dict_fzf adopt 'quit it where it runs first      enter  adopt      esc  cancel' \
+        --delimiter=$'\x1f' --with-nth=2 --preview-window=hidden \
+    | cut -d $'\x1f' -f1)
+  [[ -n $uuid ]] || return 1
+fi
 [[ $uuid == [0-9a-f](#c8)-[0-9a-f](#c4)-[0-9a-f](#c4)-[0-9a-f](#c4)-[0-9a-f](#c12) ]] || {
-  print -ru2 -- 'dict: usage: dict adopt <session-id> [title]   (the uuid claude prints on exit)'
+  print -ru2 -- 'dict: usage: dict adopt [session-id] [title]   (the uuid claude prints on exit)'
   return 1
 }
 

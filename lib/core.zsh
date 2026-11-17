@@ -404,6 +404,37 @@ _dict_transcript() {
 }
 _dict_transcript_exists() { _dict_transcript $1 >/dev/null }
 
+# Recent Claude Code conversations dictator does not hold yet, newest first,
+# as picker rows:  <uuid> \x1f <age  repo  first prompt>.  $1 = how many.
+_dict_recent() {
+  emulate -L zsh
+  setopt extended_glob
+  zmodload -F zsh/stat b:zstat 2>/dev/null
+  zmodload -F zsh/datetime b:strftime 2>/dev/null
+  local -x TZ=UTC                  # _dict_age reads the timestamp as UTC
+  local -a held files
+  held=(${(f)"$(_dict_all 2>/dev/null | jq -r '.claude_session // empty')"})
+  # Top level only: subagent transcripts live a directory deeper.
+  files=(${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/*/*.jsonl(N.om))
+  local f uuid info cwd prompt
+  integer n=0 mtime
+  for f in $files; do
+    (( n >= ${1:-30} )) && break
+    uuid=${f:t:r}
+    (( ${held[(I)$uuid]} )) && continue
+    # One jq per file; first() stops reading as soon as it has both.
+    info=$(jq -Rrn '[first(inputs|fromjson?|.cwd? // empty|strings),
+      first(inputs|fromjson?|select(.type=="user")|.message.content
+        |if type=="string" then . else (.[]?|select(.type=="text")|.text) end
+        |select(startswith("<")|not))] | map(gsub("[\\t\\n]";" ")) | join("\t")' $f 2>/dev/null)
+    IFS=$'\t' read -r cwd prompt <<< "$info"
+    [[ -n $cwd ]] || continue
+    zstat -A mtime +mtime $f
+    print -r -- "$uuid"$'\x1f'"${(l:3:)$(_dict_age "$(strftime '%Y-%m-%dT%H:%M:%SZ' $mtime)")}  $(_dict_trunc "$(_dict_repo_label "$cwd")" 28)  $(_dict_trunc "$prompt" 70)"
+    (( n++ ))
+  done
+}
+
 _dict_revive() {
   local id=$1 entry dir tname uuid cmd
   entry=$(_dict_get $id) || { print -ru2 -- "dict: unknown session: $id"; return 1 }

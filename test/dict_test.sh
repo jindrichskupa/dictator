@@ -294,7 +294,13 @@ eq 'adopted worktree is never ours'    false   "$(_dict_get adopted-work | jq -r
 fails 'adopting twice refused'      dict-adopt $AU 'again'
 fails 'non-uuid refused'            dict-adopt 'nope; rm -rf /' x
 fails 'unknown transcript refused'  dict-adopt 99999999-0000-0000-0000-000000000000 x
+DICT_PICK_LINES_ONLY=1 dict-adopt > $DICTATOR_STATE/recent
+grep -q "^$AU"$'\x1f' $DICTATOR_STATE/recent && no 'adopted session leaves the picker' absent present \
+  || ok 'adopted session leaves the picker'
 _dict_remove adopted-work
+DICT_PICK_LINES_ONLY=1 dict-adopt > $DICTATOR_STATE/recent
+grep -q "^$AU"$'\x1f' $DICTATOR_STATE/recent && ok 'picker offers a free conversation' \
+  || no 'picker offers a free conversation' present absent
 
 t 'note'
 dict-note s-dead 'waiting on review'
