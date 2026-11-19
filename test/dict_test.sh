@@ -75,6 +75,12 @@ t 'reload'
 # ... and it really did put the functions back.
 whence -w dict-where >/dev/null 2>&1 && ok 'reload leaves the functions loaded' \
   || no 'reload leaves the functions loaded' 'defined' 'missing'
+# The dispatcher lives in the plugin file, not functions/: reload must redefine it.
+dict() { print stale }
+dict-reload >/dev/null 2>&1
+[[ "$(dict bogus 2>&1)" == *'unknown command'* ]] && ok 'reload redefines the dispatcher' \
+  || no 'reload redefines the dispatcher' 'fresh dict' 'stale dict'
+eq 'reload does not grow fpath' 1 ${#${(M)fpath:#$DICTATOR_HOME/functions}}
 
 t 'require'
 fails 'missing command detected' _dict_require definitely-not-a-real-command

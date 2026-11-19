@@ -10,7 +10,8 @@ export DICTATOR_HOME=${0:A:h}
 
 source $DICTATOR_HOME/lib/core.zsh
 
-fpath=($DICTATOR_HOME/functions $fpath)
+# Filtered first: `dict reload` sources this file again.
+fpath=($DICTATOR_HOME/functions ${fpath:#$DICTATOR_HOME/functions})
 autoload -Uz dict-new dict-adopt dict-ls dict-sw dict-up dict-rm dict-note dict-rename dict-cd dict-prune dict-help dict-kill dict-where
 
 # lib/core.zsh is sourced once per shell, while functions/ is autoloaded fresh
@@ -22,7 +23,10 @@ dict-reload() {
   # it a shell with, say, bare_glob_qual off takes (N) literally and reload
   # dies with "no matches found".
   emulate -L zsh
-  source $DICTATOR_HOME/lib/core.zsh || return 1
+  # The whole plugin, not just lib/core.zsh: `dict` itself is defined there, so
+  # a new subcommand would otherwise stay "unknown" while the autoloaded help
+  # already lists it.
+  source $DICTATOR_HOME/dictator.plugin.zsh || return 1
   # Plain glob plus :t afterwards, not dict-*(:t): the modifier-in-parentheses
   # form depends on shell options this function cannot count on, and when it is
   # taken literally the glob matches nothing and reload dies with "no matches
