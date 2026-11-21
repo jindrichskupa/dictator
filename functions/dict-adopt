@@ -13,9 +13,13 @@ if [[ -z $uuid ]]; then
   rows=(${(f)"$(_dict_recent 30)"})
   (( $#rows )) || { print -ru2 -- 'dict: no conversations to adopt'; return 1 }
   if [[ -n ${DICT_PICK_LINES_ONLY:-} ]]; then print -rl -- $rows; return 0; fi
+  # fzf previews in its own shell, which has no functions — hence the source.
   uuid=$(print -rl -- $rows \
-    | _dict_fzf adopt 'quit it where it runs first      enter  adopt      esc  cancel' \
-        --delimiter=$'\x1f' --with-nth=2 --preview-window=hidden \
+    | _dict_fzf adopt 'quit it where it runs first      enter  adopt      ctrl-/  preview      esc  cancel' \
+        --delimiter=$'\x1f' --with-nth=2 \
+        --preview="zsh -fc 'source $DICTATOR_HOME/dictator.plugin.zsh; _dict_transcript_view {1}'" \
+        --preview-window='right,50%,border-left,wrap,follow,<220(down,55%,border-top,wrap,follow)' \
+        --bind='ctrl-/:toggle-preview' \
     | cut -d $'\x1f' -f1)
   [[ -n $uuid ]] || return 1
 fi

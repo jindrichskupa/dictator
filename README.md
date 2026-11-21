@@ -137,6 +137,7 @@ not affect your other tmux sessions.
 |---|---|
 | `prefix N` | new session |
 | `prefix S` | switch — fzf, with a live preview of each pane |
+| `prefix A` | adopt — fzf over recent conversations, previewing each transcript |
 | `prefix R` | rename a session (title only) |
 | `prefix K` | stop a session (reversible) |
 | `prefix X` | forget a session (permanent) |

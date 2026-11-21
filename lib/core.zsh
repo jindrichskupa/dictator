@@ -404,6 +404,20 @@ _dict_transcript() {
 }
 _dict_transcript_exists() { _dict_transcript $1 >/dev/null }
 
+# The conversation as text, for the adopt picker's preview: prompts and
+# replies only, no tool calls and no injected <system> turns. fzf's `follow`
+# keeps the newest end in view, which is where you recognise a conversation.
+_dict_transcript_view() {   # $1 = uuid
+  local f
+  f=$(_dict_transcript $1) || { print -r -- '(no transcript)'; return 1 }
+  jq -Rr 'fromjson? | select(.type == "user" or .type == "assistant") | .type as $who
+    | (.message.content | if type == "string" then .
+        else ([.[]? | select(.type == "text") | .text] | join("\n")) end) as $t
+    | select($t != "" and ($t | startswith("<") | not))
+    | (if $who == "user" then "\u001b[1;36m▶ you\u001b[0m" else "\u001b[1;33m◀ claude\u001b[0m" end)
+      + "\n" + $t + "\n"' $f
+}
+
 # Recent Claude Code conversations dictator does not hold yet, newest first,
 # as picker rows:  <uuid> \x1f <age  repo  first prompt>.  $1 = how many.
 _dict_recent() {

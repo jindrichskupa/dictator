@@ -307,6 +307,11 @@ _dict_remove adopted-work
 DICT_PICK_LINES_ONLY=1 dict-adopt > $DICTATOR_STATE/recent
 grep -q "^$AU"$'\x1f' $DICTATOR_STATE/recent && ok 'picker offers a free conversation' \
   || no 'picker offers a free conversation' present absent
+print -r -- '{"type":"user","message":{"content":"fix the login"}}' >> $CLAUDE_CONFIG_DIR/projects/-some-slug-abc123/$AU.jsonl
+print -r -- '{"type":"user","message":{"content":"<system-reminder>x</system-reminder>"}}' >> $CLAUDE_CONFIG_DIR/projects/-some-slug-abc123/$AU.jsonl
+print -r -- '{"type":"assistant","message":{"content":[{"type":"tool_use"},{"type":"text","text":"done"}]}}' >> $CLAUDE_CONFIG_DIR/projects/-some-slug-abc123/$AU.jsonl
+eq 'preview shows the conversation, not the plumbing' $'▶ you\nfix the login\n\n◀ claude\ndone' \
+   "$(_dict_transcript_view $AU | sed $'s/\e\\[[0-9;]*m//g')"
 
 t 'note'
 dict-note s-dead 'waiting on review'
